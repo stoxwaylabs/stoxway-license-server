@@ -268,41 +268,46 @@ def admin_panel():
             });
         }
 
-        function loadLicenses(){
-            let key = document.getElementById("adminKey").value;
+function loadLicenses() {
+    let key = document.getElementById("adminKey").value;
 
-            fetch("/admin/licenses?admin_key="+key)
-            .then(r=>r.json())
-            .then(data=>{
+    fetch("https://stoxway-license-server.onrender.com/admin/licenses?admin_key=" + key)
+    .then(response => response.json())
+    .then(data => {
 
-                if(data.error){
-                    alert("Unauthorized");
-                    return;
-                }
-
-                let html = "<table>";
-                html += "<tr><th>Key</th><th>Expiry</th><th>Active</th><th>Machine</th></tr>";
-
-                data.forEach(l=>{
-                    html += `<tr>
-                        <td>${l.license_key}</td>
-                        <td>${l.expiry}</td>
-                        <td>${l.active}</td>
-                        <td>${l.machine_id || "-"}</td>
-                    </tr>`;
-                });
-
-                html += "</table>";
-
-                document.getElementById("output").innerHTML = html;
-            });
+        if (data.error) {
+            alert("Unauthorized");
+            return;
         }
+
+        let html = "<table border='1' cellpadding='8'>";
+        html += "<tr><th>License Key</th><th>Expiry</th><th>Active</th></tr>";
+
+        data.forEach(l => {
+            html += "<tr>";
+            html += "<td>" + l.license_key + "</td>";
+            html += "<td>" + l.expiry + "</td>";
+            html += "<td>" + l.active + "</td>";
+            html += "</tr>";
+        });
+
+        html += "</table>";
+
+        document.getElementById("licenses").innerHTML = html;
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error loading licenses");
+    });
+}
+
 
         </script>
 
     </body>
     </html>
     """
+
 
 
 
