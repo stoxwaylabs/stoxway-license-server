@@ -1,48 +1,73 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
-import json
+import psycopg2
 import os
 
 app = Flask(__name__)
 CORS(app)
 
-LICENSE_FILE = "licenses.json"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def load_licenses():
-    if not os.path.exists(LICENSE_FILE):
-        return {}
-    with open(LICENSE_FILE, "r") as f:
-        return json.load(f)
+def get_connection():
+    return psycopg2.connect(DATABASE_URL)
+
+# Create table if not exists
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS licenses (
+            license_key TEXT PRIMARY KEY,
+            expiry DATE NOT NULL,
+            active BOOLEAN DEFAULT TRUE
+        );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+init_db()
+
+@app.route("/")
+def home():
+    return "StoxWay License Server Running 🚀"
 
 @app.route("/validate", methods=["POST"])
 def validate_license():
     data = request.json
     key = data.get("license_key")
 
-    licenses = load_licenses()
-
-    if key not in licenses:
+    if not key:
         return jsonify({"status": "invalid"})
 
-    lic = licenses[key]
+    conn = get_connection()
+    cur = conn.cursor()
 
-    if not lic.get("active", False):
+    cur.execute("SELECT expiry, active FROM licenses WHERE license_key = %s;", (key,))
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not result:
+        return jsonify({"status": "invalid"})
+
+    expiry, active = result
+
+    if not active:
         return jsonify({"status": "disabled"})
 
-    expiry = datetime.strptime(lic["expiry"], "%Y-%m-%d")
-    if datetime.now() > expiry:
+    if datetime.now().date() > expiry:
         return jsonify({"status": "expired"})
 
     return jsonify({
         "status": "active",
-        "expiry": lic["expiry"]
+        "expiry": expiry.strftime("%Y-%m-%d")
     })
 
-@app.route("/")
-def home():
-    return "StoxWay License Server Running"
-
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=10000)
+
+
 
