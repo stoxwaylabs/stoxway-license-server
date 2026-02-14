@@ -193,34 +193,42 @@ def toggle_license():
 # ===============================
 @app.route("/admin/licenses", methods=["GET"])
 def list_licenses():
-    admin_key = request.args.get("admin_key")
+    try:
+        admin_key = request.args.get("admin_key")
 
-    if admin_key != ADMIN_KEY:
-        return jsonify({"error": "Unauthorized"}), 403
+        if admin_key != os.getenv("ADMIN_KEY"):
+            return jsonify({"error": "Unauthorized"}), 403
 
-    conn = get_connection()
-    cur = conn.cursor()
+        conn = get_connection()
+        cur = conn.cursor()
 
-    cur.execute("""
-        SELECT license_key, expiry, active, machine_id
-        FROM licenses
-    """)
+        cur.execute("SELECT license_key, expiry, active FROM licenses;")
+        rows = cur.fetchall()
 
-    rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    cur.close()
-    conn.close()
+        data = []
 
-    data = []
-    for r in rows:
-        data.append({
-            "license_key": r[0],
-            "expiry": r[1].strftime("%Y-%m-%d"),
-            "active": r[2],
-            "machine_id": r[3]
-        })
+        for r in rows:
+            expiry_date = r[1]
 
-    return jsonify(data)
+            if expiry_date:
+                expiry_str = expiry_date.strftime("%Y-%m-%d")
+            else:
+                expiry_str = "N/A"
+
+            data.append({
+                "license_key": r[0],
+                "expiry": expiry_str,
+                "active": r[2]
+            })
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/admin")
 def admin_panel():
     return """
@@ -307,6 +315,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
