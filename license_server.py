@@ -65,9 +65,36 @@ def validate_license():
         "status": "active",
         "expiry": expiry.strftime("%Y-%m-%d")
     })
+@app.route("/add-license", methods=["POST"])
+def add_license():
+    data = request.json
+
+    admin_key = data.get("admin_key")
+    if admin_key != "STOXWAY_ADMIN_123":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    license_key = data.get("license_key")
+    expiry = data.get("expiry")
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO licenses (license_key, expiry, active)
+        VALUES (%s, %s, true)
+        ON CONFLICT (license_key)
+        DO UPDATE SET expiry = EXCLUDED.expiry, active = true
+    """, (license_key, expiry))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"status": "license added"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
