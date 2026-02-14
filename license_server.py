@@ -276,11 +276,17 @@ def admin_panel():
             });
         }
 
+<script>
 function loadLicenses() {
-    let key = document.getElementById("adminKey").value;
+    const key = document.getElementById("adminKey").value;
 
-    fetch("https://stoxway-license-server.onrender.com/admin/licenses?admin_key=" + key)
-    .then(response => response.json())
+    fetch(window.location.origin + "/admin/licenses?admin_key=" + key)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Server error");
+        }
+        return response.json();
+    })
     .then(data => {
 
         if (data.error) {
@@ -292,29 +298,30 @@ function loadLicenses() {
         html += "<tr><th>License Key</th><th>Expiry</th><th>Active</th></tr>";
 
         data.forEach(l => {
-            html += "<tr>";
-            html += "<td>" + l.license_key + "</td>";
-            html += "<td>" + l.expiry + "</td>";
-            html += "<td>" + l.active + "</td>";
-            html += "</tr>";
+            html += `
+                <tr>
+                    <td>${l.license_key}</td>
+                    <td>${l.expiry}</td>
+                    <td>${l.active}</td>
+                </tr>
+            `;
         });
 
         html += "</table>";
 
         document.getElementById("licenses").innerHTML = html;
     })
-    .catch(err => {
-        console.log(err);
+    .catch(error => {
+        console.log(error);
         alert("Error loading licenses");
     });
 }
-
-
-        </script>
+</script>
 
     </body>
     </html>
     """
+
 
 
 
