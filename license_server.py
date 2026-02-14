@@ -70,7 +70,7 @@ def add_license():
     data = request.json
 
     admin_key = data.get("admin_key")
-    if admin_key != "STOXWAY_ADMIN_123":
+    if admin_key != os.getenv("ADMIN_KEY"):
         return jsonify({"error": "Unauthorized"}), 403
 
     license_key = data.get("license_key")
@@ -94,6 +94,7 @@ def add_license():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
