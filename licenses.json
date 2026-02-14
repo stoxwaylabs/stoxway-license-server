@@ -1,6 +1,6 @@
 {
   "STOX-AAA-1111": {
-    "expiry": "2026-02-01",
+    "expiry": "2026-02-26",
     "active": true
   },
   "STOX-BBB-2222": {
@@ -8,3 +8,4 @@
     "active": true
   }
 }
+
