@@ -1,0 +1,1 @@
+# stoxway-license-server
