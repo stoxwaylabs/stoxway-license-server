@@ -255,28 +255,31 @@ def admin_panel():
 
         <div id="output"></div>
 
-        <script>
-
-        function createLicense(){
-            let key = document.getElementById("adminKey").value;
-            let days = document.getElementById("days").value;
-
-            fetch("/admin/create", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    admin_key:key,
-                    days:days
-                })
-            })
-            .then(r=>r.json())
-            .then(d=>{
-                alert("New License: " + d.license_key);
-                loadLicenses();
-            });
-        }
-
 <script>
+
+function createLicense(){
+    let key = document.getElementById("adminKey").value;
+    let days = document.getElementById("days").value;
+
+    fetch("/admin/create", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            admin_key:key,
+            days:days
+        })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.error){
+            alert("Unauthorized");
+            return;
+        }
+        alert("New License: " + d.license_key);
+        loadLicenses();
+    });
+}
+
 function loadLicenses() {
     const key = document.getElementById("adminKey").value;
 
@@ -294,7 +297,7 @@ function loadLicenses() {
             return;
         }
 
-        let html = "<table border='1' cellpadding='8'>";
+        let html = "<table>";
         html += "<tr><th>License Key</th><th>Expiry</th><th>Active</th></tr>";
 
         data.forEach(l => {
@@ -309,18 +312,21 @@ function loadLicenses() {
 
         html += "</table>";
 
-        document.getElementById("licenses").innerHTML = html;
+        document.getElementById("output").innerHTML = html;
     })
     .catch(error => {
         console.log(error);
         alert("Error loading licenses");
     });
 }
+
 </script>
+
 
     </body>
     </html>
     """
+
 
 
 
