@@ -68,7 +68,7 @@ def validate_license():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT expiry, active, machine_id
+        SELECT expiry, is_active, machine_id
         FROM licenses
         WHERE license_key = %s
     """, (key,))
@@ -80,10 +80,10 @@ def validate_license():
         conn.close()
         return jsonify({"status": "invalid"})
 
-    expiry, active, stored_machine = result
+    expiry, is_active, stored_machine = result
 
     # Disabled license
-    if not active:
+    if not is_active:
         cur.close()
         conn.close()
         return jsonify({"status": "disabled"})
@@ -329,6 +329,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
