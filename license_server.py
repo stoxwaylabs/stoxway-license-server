@@ -22,7 +22,8 @@ LIVE_DATA = {
         "score": 0,
         "signal": "START",
         "pcr": None
-    }
+    },
+    "MANUAL_TRADES": []
 }
 
 @app.route("/update_dashboard", methods=["POST"])
@@ -34,9 +35,27 @@ def update_dashboard():
     if not data:
         return jsonify({"error": "No data"}), 400
 
-    LIVE_DATA = data
+    # Keep manual trades separate
+    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
+
     return jsonify({"status": "updated"})
 
+@app.route("/add_manual_trade", methods=["POST"])
+def add_manual_trade():
+    global LIVE_DATA
+
+    data = request.json
+    trade = data.get("trade")
+
+    if not trade:
+        return jsonify({"error": "No trade"}), 400
+
+    LIVE_DATA["MANUAL_TRADES"].insert(0, trade)
+
+    # Keep only last 50 trades
+    LIVE_DATA["MANUAL_TRADES"] = LIVE_DATA["MANUAL_TRADES"][:50]
+
+    return jsonify({"status": "added"})
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
@@ -367,6 +386,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
