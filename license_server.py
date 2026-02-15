@@ -56,11 +56,12 @@ def home():
 # ===============================
 @app.route("/validate", methods=["POST"])
 def validate_license():
+
     data = request.json
     key = data.get("license_key")
     machine_id = data.get("machine_id")
 
-    if not key:
+    if not key or not machine_id:
         return jsonify({"status": "invalid"})
 
     conn = get_connection()
@@ -81,18 +82,20 @@ def validate_license():
 
     expiry, active, stored_machine = result
 
+    # Disabled license
     if not active:
         cur.close()
         conn.close()
         return jsonify({"status": "disabled"})
 
+    # Expiry check
     if datetime.now().date() > expiry:
         cur.close()
         conn.close()
         return jsonify({"status": "expired"})
 
-    # First time binding
-    if stored_machine is None and machine_id:
+    # First activation → bind machine
+    if stored_machine is None:
         cur.execute("""
             UPDATE licenses
             SET machine_id = %s
@@ -100,8 +103,8 @@ def validate_license():
         """, (machine_id, key))
         conn.commit()
 
-    # Different machine
-    elif stored_machine and machine_id and stored_machine != machine_id:
+    # If machine mismatch
+    elif stored_machine != machine_id:
         cur.close()
         conn.close()
         return jsonify({"status": "different_machine"})
@@ -326,6 +329,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
