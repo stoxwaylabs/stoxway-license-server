@@ -61,8 +61,29 @@ def init_db():
     cur.close()
     conn.close()
 
-init_db()
 
+def add_machine_column_if_missing():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            ALTER TABLE licenses
+            ADD COLUMN machine_id TEXT;
+        """)
+        conn.commit()
+    except psycopg2.errors.DuplicateColumn:
+        conn.rollback()
+    except Exception:
+        conn.rollback()
+
+    cur.close()
+    conn.close()
+
+
+# Run both
+init_db()
+add_machine_column_if_missing()
 
 # ===============================
 # HOME
@@ -335,6 +356,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
