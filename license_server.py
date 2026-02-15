@@ -56,66 +56,51 @@ def home():
 # ===============================
 @app.route("/validate", methods=["POST"])
 def validate_license():
+    try:
+        data = request.json
+        key = data.get("license_key")
+        machine_id = data.get("machine_id")
 
-    data = request.json
-    key = data.get("license_key")
-    machine_id = data.get("machine_id")
+        if not key or not machine_id:
+            return jsonify({"status": "invalid"})
 
-    if not key or not machine_id:
-        return jsonify({"status": "invalid"})
+        conn = get_connection()
+        cur = conn.cursor()
 
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT expiry, is_active, machine_id
-        FROM licenses
-        WHERE license_key = %s
-    """, (key,))
-
-    result = cur.fetchone()
-
-    if not result:
-        cur.close()
-        conn.close()
-        return jsonify({"status": "invalid"})
-
-    expiry, is_active, stored_machine = result
-
-    # Disabled license
-    if not is_active:
-        cur.close()
-        conn.close()
-        return jsonify({"status": "disabled"})
-
-    # Expiry check
-    if datetime.now().date() > expiry:
-        cur.close()
-        conn.close()
-        return jsonify({"status": "expired"})
-
-    # First activation → bind machine
-    if stored_machine is None:
         cur.execute("""
-            UPDATE licenses
-            SET machine_id = %s
+            SELECT expiry, is_active, machine_id
+            FROM licenses
             WHERE license_key = %s
-        """, (machine_id, key))
-        conn.commit()
+        """, (key,))
 
-    # If machine mismatch
-    elif stored_machine != machine_id:
-        cur.close()
-        conn.close()
-        return jsonify({"status": "different_machine"})
+        result = cur.fetchone()
 
-    cur.close()
-    conn.close()
+        if not result:
+            return jsonify({"status": "invalid"})
 
-    return jsonify({
-        "status": "active",
-        "expiry": expiry.strftime("%Y-%m-%d")
-    })
+        expiry, is_active, stored_machine = result
+
+        if not is_active:
+            return jsonify({"status": "disabled"})
+
+        if datetime.now().date() > expiry:
+            return jsonify({"status": "expired"})
+
+        if stored_machine is None:
+            cur.execute("""
+                UPDATE licenses
+                SET machine_id = %s
+                WHERE license_key = %s
+            """, (machine_id, key))
+            conn.commit()
+
+        elif stored_machine != machine_id:
+            return jsonify({"status": "different_machine"})
+
+        return jsonify({"status": "active"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ===============================
@@ -329,6 +314,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
