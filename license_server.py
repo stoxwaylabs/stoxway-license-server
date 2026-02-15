@@ -8,7 +8,39 @@ import string
 
 app = Flask(__name__)
 CORS(app)
+# ===============================
+# LIVE DASHBOARD STORAGE
+# ===============================
 
+LIVE_DATA = {
+    "BOT": {
+        "price": 0,
+        "volume_spike": "-",
+        "breakout": "-",
+        "oi": "-",
+        "vwap_dev": "-",
+        "score": 0,
+        "signal": "START",
+        "pcr": None
+    }
+}
+
+@app.route("/update_dashboard", methods=["POST"])
+def update_dashboard():
+    global LIVE_DATA
+
+    data = request.json
+
+    if not data:
+        return jsonify({"error": "No data"}), 400
+
+    LIVE_DATA = data
+    return jsonify({"status": "updated"})
+
+
+@app.route("/get_dashboard", methods=["GET"])
+def get_dashboard():
+    return jsonify(LIVE_DATA)
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
@@ -335,6 +367,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
