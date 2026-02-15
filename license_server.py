@@ -7,28 +7,7 @@ import random
 import string
 
 app = Flask(__name__)
-
-def ensure_machine_column():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    try:
-        cur.execute("""
-            ALTER TABLE licenses
-            ADD COLUMN machine_id TEXT;
-        """)
-        conn.commit()
-    except Exception:
-        # Column already exists
-        pass
-
-    cur.close()
-    conn.close()
-
-ensure_machine_column()
-
 CORS(app)
-
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
@@ -356,6 +335,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
