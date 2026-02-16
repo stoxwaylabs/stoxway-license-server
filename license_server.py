@@ -23,8 +23,10 @@ LIVE_DATA = {
         "signal": "START",
         "pcr": None
     },
-    "MANUAL_TRADES": []
+    "MANUAL_TRADES": [],
+    "CANDLES": []
 }
+
 
 @app.route("/update_dashboard", methods=["POST"])
 def update_dashboard():
@@ -34,6 +36,15 @@ def update_dashboard():
 
     if not data:
         return jsonify({"error": "No data"}), 400
+
+    # Update BOT data
+    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
+
+    # Update CANDLE data (if sent)
+    LIVE_DATA["CANDLES"] = data.get("CANDLES", LIVE_DATA.get("CANDLES", []))
+
+    return jsonify({"status": "updated"})
+
 
     # Keep manual trades separate
     LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
@@ -386,6 +397,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
