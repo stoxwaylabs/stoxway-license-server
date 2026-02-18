@@ -73,6 +73,7 @@ def get_dashboard():
     return jsonify(LIVE_DATA)
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 
 # ===============================
@@ -397,6 +398,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+
 
 
 
