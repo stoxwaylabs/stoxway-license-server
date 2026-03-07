@@ -67,6 +67,23 @@ def add_manual_trade():
     LIVE_DATA["MANUAL_TRADES"] = LIVE_DATA["MANUAL_TRADES"][:50]
 
     return jsonify({"status": "added"})
+    
+@app.route("/delete_manual_trade", methods=["POST"])
+def delete_manual_trade():
+
+    global LIVE_DATA
+
+    data = request.json
+    trade = data.get("trade")
+
+    if not trade:
+        return jsonify({"error": "No trade"}), 400
+
+    trades = LIVE_DATA.get("MANUAL_TRADES", [])
+
+    LIVE_DATA["MANUAL_TRADES"] = [t for t in trades if t != trade]
+
+    return jsonify({"status": "deleted"})
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
@@ -401,6 +418,7 @@ function loadLicenses() {
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
