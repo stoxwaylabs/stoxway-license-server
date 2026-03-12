@@ -24,7 +24,7 @@ LIVE_DATA = {
         "pcr": None
     },
     "MANUAL_TRADES": [],
-    "CANDLES": []
+    "CANDLES": {}
 }
 
 
@@ -37,19 +37,19 @@ def update_dashboard():
     if not data:
         return jsonify({"error": "No data"}), 400
 
+    symbol = data.get("symbol", "NIFTY")
+
     # Update BOT data
     LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
 
-    # Update CANDLE data (if sent)
-    LIVE_DATA["CANDLES"] = data.get("CANDLES", LIVE_DATA.get("CANDLES", []))
-
+    # store candles per symbol
+    candles = data.get("CANDLES")
+    if candles:
+        LIVE_DATA["CANDLES"][symbol] = candles
+        
     return jsonify({"status": "updated"})
 
-
-    # Keep manual trades separate
-    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
-
-    return jsonify({"status": "updated"})
+   
 
 @app.route("/add_manual_trade", methods=["POST"])
 def add_manual_trade():
@@ -87,7 +87,16 @@ def delete_manual_trade():
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
-    return jsonify(LIVE_DATA)
+
+    symbol = request.args.get("symbol", "NIFTY")
+
+    candles = LIVE_DATA["CANDLES"].get(symbol, [])
+
+    return jsonify({
+        "BOT": LIVE_DATA["BOT"],
+        "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
+        "CANDLES": candles
+    })
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 ADMIN_SECRET = os.getenv("ADMIN_SECRET")
@@ -418,6 +427,7 @@ function loadLicenses() {
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
