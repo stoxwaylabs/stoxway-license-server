@@ -44,7 +44,7 @@ def update_dashboard():
 
     # store candles per symbol
     candles = data.get("CANDLES")
-    
+
     if candles:
 
         if symbol not in LIVE_DATA["CANDLES"]:
@@ -60,7 +60,6 @@ def update_dashboard():
         LIVE_DATA["CANDLES"][symbol] = store[-500:]
 
     return jsonify({"status": "updated"})
-
    
 
 @app.route("/add_manual_trade", methods=["POST"])
