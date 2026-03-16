@@ -43,21 +43,11 @@ def update_dashboard():
     LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
 
     # store candles per symbol
+    
     candles = data.get("CANDLES")
-
     if candles:
-
-        if symbol not in LIVE_DATA["CANDLES"]:
-            LIVE_DATA["CANDLES"][symbol] = []
-
-        store = LIVE_DATA["CANDLES"][symbol]
-
-        for c in candles:
-            if not store or store[-1][0] != c[0]:
-                store.append(c)
-
-        # keep history limited
-        LIVE_DATA["CANDLES"][symbol] = store[-500:]
+        LIVE_DATA["CANDLES"][symbol] = candles
+   
 
     return jsonify({"status": "updated"})
    
