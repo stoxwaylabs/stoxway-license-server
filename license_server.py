@@ -35,9 +35,8 @@ LIVE_DATA = {
 def update_dashboard():
     global LIVE_DATA
 
-    print("📩 UPDATE DASHBOARD HIT")   # ✅ debug
+    print("📩 UPDATE DASHBOARD HIT")
 
-    # 🔥 SAFE JSON (FIX)
     data = request.get_json(silent=True)
 
     if not data:
@@ -47,18 +46,14 @@ def update_dashboard():
     symbol = data.get("symbol", "NIFTY")
 
     # Update BOT data
-    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
+    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA.get("BOT", {}))
 
-    # store candles per symbol
-    
+    # Update candles
     candles = data.get("CANDLES")
     if candles:
-         # 🔥 OPTIONAL: limit size (prevents crash)
         if len(candles) > 500:
-            candles = candles[-500:]   # keep last 500 only
-            
+            candles = candles[-500:]
         LIVE_DATA["CANDLES"][symbol] = candles
-   
 
     return jsonify({"status": "updated"})
    
