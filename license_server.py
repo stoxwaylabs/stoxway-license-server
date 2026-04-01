@@ -6,6 +6,9 @@ import os
 import random
 import string
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+ADMIN_KEY = os.getenv("ADMIN_KEY")
+
 app = Flask(__name__)
 CORS(app)
 # ===============================
@@ -89,18 +92,61 @@ def delete_manual_trade():
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
 
+    key = request.args.get("key")
+    device_id = request.args.get("device_id")
+    
+    if not key or not device_id:
+        return jsonify({"status": "invalid"})
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT expiry, active, machine_id
+        FROM licenses
+        WHERE license_key = %s
+    """, (key,))
+
+    result = cur.fetchone()
+
+    if not result:
+        return jsonify({"status": "invalid"})
+
+    expiry, active, stored_device = result
+
+    if not active:
+        return jsonify({"status": "disabled"})
+
+    if datetime.now().date() > expiry:
+        return jsonify({"status": "expired"})
+
+    if stored_device is None:
+        cur.execute("""
+            UPDATE licenses
+            SET machine_id = %s
+            WHERE license_key = %s
+        """, (device_id, key))
+        conn.commit()
+
+    elif stored_device != device_id:
+        return jsonify({"status": "different_machine"})
+
+    # =========================
+    # RETURN DASHBOARD DATA
+    # =========================
     symbol = request.args.get("symbol", "NIFTY")
 
     candles = LIVE_DATA["CANDLES"].get(symbol, [])
 
+    cur.close()
+    conn.close()
+
     return jsonify({
+        "status": "valid",
         "BOT": LIVE_DATA["BOT"],
         "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
         "CANDLES": candles
     })
-DATABASE_URL = os.getenv("DATABASE_URL")
-ADMIN_KEY = os.getenv("ADMIN_KEY")
-ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 
 # ===============================
