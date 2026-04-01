@@ -120,7 +120,17 @@ def get_dashboard():
     if datetime.now().date() > expiry:
         return jsonify({"status": "expired"})
 
-    if stored_device is None:
+    # =========================
+    # DEVICE BIND LOGIC (FINAL)
+    # =========================
+
+    print("🔥 KEY:", key)
+    print("🔥 INCOMING DEVICE:", device_id)
+    print("🔥 STORED DEVICE:", stored_device)
+
+    if stored_device is None or stored_device == "":
+        print("🆕 FIRST TIME BIND")
+
         cur.execute("""
             UPDATE licenses
             SET machine_id = %s
@@ -128,7 +138,11 @@ def get_dashboard():
         """, (device_id, key))
         conn.commit()
 
-    elif stored_device != device_id:
+    elif stored_device == device_id:
+        print("✅ SAME DEVICE")
+
+    else:
+        print("❌ DIFFERENT DEVICE")
         return jsonify({"status": "different_machine"})
 
     # =========================
