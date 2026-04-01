@@ -35,7 +35,7 @@ LIVE_DATA = {
 def update_dashboard():
     global LIVE_DATA
 
-     print("📩 UPDATE DASHBOARD HIT")   # ✅ debug
+    print("📩 UPDATE DASHBOARD HIT")   # ✅ debug
 
     # 🔥 SAFE JSON (FIX)
     data = request.get_json(silent=True)
