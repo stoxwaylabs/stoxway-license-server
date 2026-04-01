@@ -91,7 +91,7 @@ def delete_manual_trade():
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
-    print("🚀 NEW VERSION DEPLOYED")
+    print("🚀 VERSION 2 LIVE")
 
     key = request.args.get("key")
     device_id = request.args.get("device_id")
