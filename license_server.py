@@ -132,7 +132,9 @@ def get_dashboard():
     print("🔥 INCOMING DEVICE:", device_id)
     print("🔥 STORED DEVICE:", stored_device)
 
-    if not stored_device or str(stored_device).strip() == "":
+    stored = str(stored_device).strip() if stored_device else ""
+    incoming = str(device_id).strip()
+    if strored == "":
         print("🆕 FIRST TIME BIND")
 
         cur.execute("""
@@ -142,7 +144,7 @@ def get_dashboard():
         """, (device_id, key))
         conn.commit()
 
-    elif str(stored_device).strip() == str(device_id).strip():
+    elif stored == incoming:
         print("✅ SAME DEVICE")
 
     else:
