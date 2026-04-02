@@ -35,27 +35,25 @@ LIVE_DATA = {
 def update_dashboard():
     global LIVE_DATA
 
-    print("📩 UPDATE DASHBOARD HIT")
-
-    data = request.get_json(silent=True)
+    data = request.json
 
     if not data:
-        print("❌ No JSON received")
         return jsonify({"error": "No data"}), 400
 
     symbol = data.get("symbol", "NIFTY")
 
     # Update BOT data
-    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA.get("BOT", {}))
+    LIVE_DATA["BOT"] = data.get("BOT", LIVE_DATA["BOT"])
 
-    # Update candles
+    # store candles per symbol
+    
     candles = data.get("CANDLES")
     if candles:
-        if len(candles) > 500:
-            candles = candles[-500:]
         LIVE_DATA["CANDLES"][symbol] = candles
+   
 
     return jsonify({"status": "updated"})
+   
    
 
 @app.route("/add_manual_trade", methods=["POST"])
@@ -94,79 +92,19 @@ def delete_manual_trade():
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
-    print("🚀 VERSION 2 LIVE")
 
-    key = request.args.get("key")
-    device_id = request.args.get("device_id")
-    
-    if not key or not device_id:
-        return jsonify({"status": "invalid"})
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT expiry, active, machine_id
-        FROM licenses
-        WHERE license_key = %s
-    """, (key,))
-
-    result = cur.fetchone()
-
-    if not result:
-        return jsonify({"status": "invalid"})
-
-    expiry, active, stored_device = result
-
-    if not active:
-        return jsonify({"status": "disabled"})
-
-    if datetime.now().date() > expiry:
-        return jsonify({"status": "expired"})
-
-    # =========================
-    # DEVICE BIND LOGIC (FINAL)
-    # =========================
-
-    print("🔥 KEY:", key)
-    print("🔥 INCOMING DEVICE:", device_id)
-    print("🔥 STORED DEVICE:", stored_device)
-
-    stored = str(stored_device).strip() if stored_device else ""
-    incoming = str(device_id).strip()
-    if strored == "":
-        print("🆕 FIRST TIME BIND")
-
-        cur.execute("""
-            UPDATE licenses
-            SET machine_id = %s
-            WHERE license_key = %s
-        """, (device_id, key))
-        conn.commit()
-
-    elif stored == incoming:
-        print("✅ SAME DEVICE")
-
-    else:
-        print("❌ DIFFERENT DEVICE")
-        return jsonify({"status": "different_machine"})
-
-    # =========================
-    # RETURN DASHBOARD DATA
-    # =========================
     symbol = request.args.get("symbol", "NIFTY")
 
     candles = LIVE_DATA["CANDLES"].get(symbol, [])
 
-    cur.close()
-    conn.close()
-
     return jsonify({
-        "status": "valid",
         "BOT": LIVE_DATA["BOT"],
         "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
         "CANDLES": candles
     })
+DATABASE_URL = os.getenv("DATABASE_URL")
+ADMIN_KEY = os.getenv("ADMIN_KEY")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 
 # ===============================
