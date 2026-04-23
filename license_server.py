@@ -118,6 +118,20 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
+# 🔥 🔥 ISKE JUST NEECHE ADD KAR
+@app.route("/update_token", methods=["POST"])
+def update_token():
+    try:
+        data = request.json
+        token = data.get("token")
+
+        with open("access_token.txt", "w") as f:
+            f.write(token)
+
+        return jsonify({"status": "updated"})
+    except:
+        return jsonify({"error": "failed"}), 500
+
 
 # ===============================
 # DATABASE CONNECTION
