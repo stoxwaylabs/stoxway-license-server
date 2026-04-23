@@ -102,6 +102,18 @@ def get_dashboard():
         "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
         "CANDLES": candles
     })
+
+
+# 🔥 YAHAN ADD KIYA
+@app.route("/get_token", methods=["GET"])
+def get_token():
+    try:
+        with open("access_token.txt", "r") as f:
+            token = f.read().strip()
+        return jsonify({"token": token})
+    except:
+        return jsonify({"error": "No token found"}), 500
+        
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 ADMIN_SECRET = os.getenv("ADMIN_SECRET")
