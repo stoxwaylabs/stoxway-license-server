@@ -132,6 +132,27 @@ def update_token():
     except:
         return jsonify({"error": "failed"}), 500
 
+# ===============================
+# COMMUNITY SYSTEM
+# ===============================
+
+COMMUNITY_DATA = []
+
+@app.route("/community_post", methods=["POST"])
+def community_post():
+    data = request.json
+    msg = data.get("message")
+
+    if msg:
+        COMMUNITY_DATA.append(msg)
+
+    return jsonify({"status": "saved"})
+
+
+@app.route("/get_community", methods=["GET"])
+def get_community():
+    return jsonify(COMMUNITY_DATA[::-1])  # latest first
+
 
 # ===============================
 # DATABASE CONNECTION
