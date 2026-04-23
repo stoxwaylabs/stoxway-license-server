@@ -66,7 +66,10 @@ def add_manual_trade():
     if not trade:
         return jsonify({"error": "No trade"}), 400
 
-    LIVE_DATA["MANUAL_TRADES"].insert(0, trade)
+    LIVE_DATA["MANUAL_TRADES"].insert(0, {
+        "time": datetime.utcnow().isoformat(),
+        "trade": trade
+    })
 
     # Keep only last 50 trades
     LIVE_DATA["MANUAL_TRADES"] = LIVE_DATA["MANUAL_TRADES"][:50]
@@ -96,6 +99,22 @@ def get_dashboard():
     symbol = request.args.get("symbol", "NIFTY")
 
     candles = LIVE_DATA["CANDLES"].get(symbol, [])
+
+    # 🔥 AUTO DELETE 24 HOURS
+    from datetime import datetime, timedelta
+
+    filtered = []
+
+    for t in LIVE_DATA["MANUAL_TRADES"]:
+        try:
+            dt = datetime.fromisoformat(t["time"])
+            if datetime.utcnow() - dt <= timedelta(hours=24):
+                filtered.append(t)
+        except:
+            pass
+
+    LIVE_DATA["MANUAL_TRADES"] = filtered
+
 
     return jsonify({
         "BOT": LIVE_DATA["BOT"],
