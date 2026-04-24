@@ -102,7 +102,6 @@ def delete_manual_trade():
 def get_dashboard():
 
     symbol = request.args.get("symbol", "NIFTY")
-
     candles = LIVE_DATA["CANDLES"].get(symbol, [])
 
     # 🔥 AUTO DELETE 24 HOURS
@@ -112,23 +111,22 @@ def get_dashboard():
 
     for t in LIVE_DATA["MANUAL_TRADES"]:
         try:
-           dt = datetime.fromisoformat(t["time"])
-           now = datetime.now(ist)
+            dt = datetime.fromisoformat(t["time"])
+            now = datetime.now(ist)
 
-           if now - dt <= timedelta(hours=24):
-               filtered.append(t)
-           
-       except Exception as e:
-          print("Time parse error:", e)
-       LIVE_DATA["MANUAL_TRADES"] = filtered
+            if now - dt <= timedelta(hours=24):
+                filtered.append(t)
 
+        except Exception as e:
+            print("Time parse error:", e)
+
+    LIVE_DATA["MANUAL_TRADES"] = filtered
 
     return jsonify({
         "BOT": LIVE_DATA["BOT"],
         "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
         "CANDLES": candles
     })
-
 
 # 🔥 YAHAN ADD KIYA
 @app.route("/get_token", methods=["GET"])
