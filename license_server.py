@@ -204,19 +204,15 @@ def delete_community():
     global COMMUNITY_DATA
 
     data = request.json
-    index = data.get("index")
+    user = data.get("user")
+    message = data.get("message")
 
-    if index is None:
-        return jsonify({"error": "No index"}), 400
-
-    # 🔥 reverse index because of [::-1]
-    real_index = len(COMMUNITY_DATA) - 1 - index
-
-    if 0 <= real_index < len(COMMUNITY_DATA):
-        COMMUNITY_DATA.pop(real_index)
+    COMMUNITY_DATA = [
+        m for m in COMMUNITY_DATA
+        if not (m["user"] == user and m["message"] == message)
+    ]
 
     return jsonify({"status": "deleted"})
-
 
 # ===============================
 # DATABASE CONNECTION
