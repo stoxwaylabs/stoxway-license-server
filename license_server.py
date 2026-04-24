@@ -67,7 +67,7 @@ def add_manual_trade():
         return jsonify({"error": "No trade"}), 400
 
     LIVE_DATA["MANUAL_TRADES"].insert(0, {
-        "time": datetime.utcnow().isoformat(),
+        "time": datetime.now(ist).isoformat(),
         "trade": trade
     })
 
@@ -89,7 +89,9 @@ def delete_manual_trade():
 
     trades = LIVE_DATA.get("MANUAL_TRADES", [])
 
-    LIVE_DATA["MANUAL_TRADES"] = [t for t in trades if t != trade]
+    LIVE_DATA["MANUAL_TRADES"] = [
+        t for t in trades if t.get("trade") != trade
+    ]
 
     return jsonify({"status": "deleted"})
 
