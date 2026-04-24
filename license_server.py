@@ -70,7 +70,7 @@ def add_manual_trade():
         return jsonify({"error": "No trade"}), 400
 
     LIVE_DATA["MANUAL_TRADES"].insert(0, {
-        "time": datetime.now().isoformat(),
+        "time": datetime.now(ist).isoformat(),
         "trade": trade
     })
 
@@ -112,12 +112,14 @@ def get_dashboard():
 
     for t in LIVE_DATA["MANUAL_TRADES"]:
         try:
-            dt = datetime.fromisoformat(t["time"]).replace(tzinfo=None)
-            
-            if datetime.now() - dt <= timedelta(hours=24):
+           dt = datetime.fromisoformat(t["time"])   # timezone ke sath
+           now = datetime.now(ist)                  # same timezone
+
+           if now - dt <= timedelta(hours=24):
                 filtered.append(t)
-        except:
-            pass
+               
+       except Exception as e:
+            print("Time parse error:", e)  # 🔥
 
     LIVE_DATA["MANUAL_TRADES"] = filtered
 
