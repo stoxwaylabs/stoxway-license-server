@@ -5,6 +5,8 @@ import psycopg2
 import os
 import random
 import string
+import pytz
+ist = pytz.timezone("Asia/Kolkata")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 ADMIN_KEY = os.getenv("ADMIN_KEY")
@@ -67,7 +69,7 @@ def add_manual_trade():
         return jsonify({"error": "No trade"}), 400
 
     LIVE_DATA["MANUAL_TRADES"].insert(0, {
-        "time": datetime.now(ist).isoformat(),
+        "time": datetime.now().isoformat(),
         "trade": trade
     })
 
@@ -109,8 +111,9 @@ def get_dashboard():
 
     for t in LIVE_DATA["MANUAL_TRADES"]:
         try:
-            dt = datetime.fromisoformat(t["time"])
-            if datetime.utcnow() - dt <= timedelta(hours=24):
+            dt = datetime.fromisoformat(t["time"]).replace(tzinfo=None)
+            
+            if datetime.now() - dt <= timedelta(hours=24):
                 filtered.append(t)
         except:
             pass
