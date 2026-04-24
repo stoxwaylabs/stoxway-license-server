@@ -128,33 +128,48 @@ def get_dashboard():
         "CANDLES": candles
     })
 
-# 🔥 YAHAN ADD KIYA
 @app.route("/get_token", methods=["GET"])
 def get_token():
-    try:
-        with open("access_token.txt", "r") as f:
-            token = f.read().strip()
-        return jsonify({"token": token})
-    except:
-        return jsonify({"error": "No token found"}), 500
-        
-DATABASE_URL = os.getenv("DATABASE_URL")
-ADMIN_KEY = os.getenv("ADMIN_KEY")
-ADMIN_SECRET = os.getenv("ADMIN_SECRET")
+    conn = get_connection()
+    cur = conn.cursor()
 
-# 🔥 🔥 ISKE JUST NEECHE ADD KAR
+    cur.execute("SELECT token FROM token_store WHERE id = 1")
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if result:
+        return jsonify({"token": result[0]})
+    else:
+        return jsonify({"error": "No token"}), 404
+
+
 @app.route("/update_token", methods=["POST"])
 def update_token():
     try:
         data = request.json
         token = data.get("token")
 
-        with open("access_token.txt", "w") as f:
-            f.write(token)
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO token_store (id, token)
+            VALUES (1, %s)
+            ON CONFLICT (id)
+            DO UPDATE SET token = EXCLUDED.token
+        """, (token,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        if token:
+            print("🔥 Token Updated:", token[:8], "...")
 
         return jsonify({"status": "updated"})
-    except:
-        return jsonify({"error": "failed"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ===============================
 # COMMUNITY SYSTEM
@@ -189,6 +204,22 @@ def get_community():
 # ===============================
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
+
+
+def init_token_table():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS token_store (
+            id INT PRIMARY KEY,
+            token TEXT
+        );
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # ===============================
@@ -234,6 +265,7 @@ def add_machine_column_if_missing():
 # Run both
 init_db()
 add_machine_column_if_missing()
+init_token_table()   # 👈 ADD THIS
 
 # ===============================
 # HOME
