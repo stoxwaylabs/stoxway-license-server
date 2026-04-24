@@ -165,13 +165,19 @@ COMMUNITY_DATA = []
 @app.route("/community_post", methods=["POST"])
 def community_post():
     data = request.json
+
     msg = data.get("message")
+    user = data.get("user", "User")
+    avatar = data.get("avatar", "📊")
 
     if msg:
-        COMMUNITY_DATA.append(msg)
+        COMMUNITY_DATA.append({
+            "user": user,
+            "avatar": avatar,
+            "message": msg
+        })
 
     return jsonify({"status": "saved"})
-
 
 @app.route("/get_community", methods=["GET"])
 def get_community():
