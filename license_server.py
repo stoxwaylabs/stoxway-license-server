@@ -112,16 +112,15 @@ def get_dashboard():
 
     for t in LIVE_DATA["MANUAL_TRADES"]:
         try:
-           dt = datetime.fromisoformat(t["time"])   # timezone ke sath
-           now = datetime.now(ist)                  # same timezone
+           dt = datetime.fromisoformat(t["time"])
+           now = datetime.now(ist)
 
            if now - dt <= timedelta(hours=24):
-                filtered.append(t)
-               
+               filtered.append(t)
+           
        except Exception as e:
-            print("Time parse error:", e)  # 🔥
-
-    LIVE_DATA["MANUAL_TRADES"] = filtered
+          print("Time parse error:", e)
+       LIVE_DATA["MANUAL_TRADES"] = filtered
 
 
     return jsonify({
