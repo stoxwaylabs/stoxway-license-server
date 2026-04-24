@@ -199,6 +199,25 @@ def get_community():
     return jsonify(COMMUNITY_DATA[::-1])  # latest first
 
 
+@app.route("/delete_community", methods=["POST"])
+def delete_community():
+    global COMMUNITY_DATA
+
+    data = request.json
+    index = data.get("index")
+
+    if index is None:
+        return jsonify({"error": "No index"}), 400
+
+    # 🔥 reverse index because of [::-1]
+    real_index = len(COMMUNITY_DATA) - 1 - index
+
+    if 0 <= real_index < len(COMMUNITY_DATA):
+        COMMUNITY_DATA.pop(real_index)
+
+    return jsonify({"status": "deleted"})
+
+
 # ===============================
 # DATABASE CONNECTION
 # ===============================
