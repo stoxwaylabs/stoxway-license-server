@@ -166,6 +166,7 @@ def update_token():
         conn.close()
         if token:
             print("🔥 Token Updated:", token[:8], "...")
+            print("📡 Request From:", request.remote_addr)
 
         return jsonify({"status": "updated"})
     except Exception as e:
