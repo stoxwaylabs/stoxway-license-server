@@ -6,6 +6,7 @@ import os
 import random
 import string
 import pytz
+import uuid
 
 ist = pytz.timezone("Asia/Kolkata")
 
@@ -185,9 +186,11 @@ def community_post():
     msg = data.get("message")
     user = data.get("user", "User")
     avatar = data.get("avatar", "📊")
+    msg_id = data.get("id") or str(uuid.uuid4())
 
     if msg:
         COMMUNITY_DATA.append({
+            "id": msg_id,     # 🔥 STORE ID
             "user": user,
             "avatar": avatar,
             "message": msg
@@ -205,12 +208,15 @@ def delete_community():
     global COMMUNITY_DATA
 
     data = request.json
-    user = data.get("user")
-    message = data.get("message")
+    msg_id = data.get("id")   # 🔥 use ID
+
+    if not msg_id:
+        return jsonify({"status": "error", "msg": "No ID provided"})
+   
 
     COMMUNITY_DATA = [
         m for m in COMMUNITY_DATA
-        if not (m["user"] == user and m["message"] == message)
+        if m.get("id") != msg_id   # 🔥 delete by ID
     ]
 
     return jsonify({"status": "deleted"})
