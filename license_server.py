@@ -366,9 +366,12 @@ def add_machine_column_if_missing():
 
 
 # Run both
-init_db()
-add_machine_column_if_missing()
-init_token_table()   # 👈 ADD THIS
+try:
+    init_db()
+    add_machine_column_if_missing()
+    init_token_table()   # 👈 ADD THIS
+except Exception as e:
+    print("❌ DB INIT FAILED:", e)
 
 # ===============================
 # HOME
