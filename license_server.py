@@ -74,6 +74,7 @@ def add_manual_trade():
         "time": datetime.now(ist).isoformat(),
         "trade": trade
     })
+    save_data()
 
     # Keep only last 50 trades
     LIVE_DATA["MANUAL_TRADES"] = LIVE_DATA["MANUAL_TRADES"][:50]
@@ -96,6 +97,8 @@ def delete_manual_trade():
     LIVE_DATA["MANUAL_TRADES"] = [
         t for t in trades if t.get("trade") != trade
     ]
+    
+    save_data()  
 
     return jsonify({"status": "deleted"})
 
@@ -122,6 +125,7 @@ def get_dashboard():
             print("Time parse error:", e)
 
     LIVE_DATA["MANUAL_TRADES"] = filtered
+    save_data()  
 
     return jsonify({
         "BOT": LIVE_DATA["BOT"],
@@ -179,6 +183,37 @@ def update_token():
 
 COMMUNITY_DATA = []
 
+# ===============================
+# 🔥 PERSISTENCE (MISSING PART)
+# ===============================
+
+import json
+
+DATA_FILE = "data.json"
+
+def load_data():
+    global COMMUNITY_DATA, LIVE_DATA
+
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+
+            COMMUNITY_DATA = data.get("community", [])
+            LIVE_DATA["MANUAL_TRADES"] = data.get("trades", [])
+
+            print("✅ Data Loaded")
+
+    except:
+        print("⚠️ Fresh Start")
+
+
+def save_data():
+    with open(DATA_FILE, "w") as f:
+        json.dump({
+            "community": COMMUNITY_DATA,
+            "trades": LIVE_DATA["MANUAL_TRADES"]
+        }, f)
+
 @app.route("/community_post", methods=["POST"])
 def community_post():
     data = request.json
@@ -193,15 +228,30 @@ def community_post():
             "id": msg_id,     # 🔥 STORE ID
             "user": user,
             "avatar": avatar,
-            "message": msg
+            "message": msg,
+            "time": datetime.now(ist).isoformat()
         })
+        save_data()
 
     return jsonify({"status": "saved"})
 
 @app.route("/get_community", methods=["GET"])
 def get_community():
-    return jsonify(COMMUNITY_DATA[::-1])  # latest first
+    global COMMUNITY_DATA
 
+    now = datetime.now(ist)
+
+    COMMUNITY_DATA = [
+        m for m in COMMUNITY_DATA
+        if (
+            "time" not in m or
+            (now - datetime.fromisoformat(m["time"])) <= timedelta(hours=24)
+        )
+    ]
+
+    save_data()
+
+    return jsonify(COMMUNITY_DATA[::-1])
 
 @app.route("/delete_community", methods=["POST"])
 def delete_community():
@@ -218,6 +268,7 @@ def delete_community():
         m for m in COMMUNITY_DATA
         if m.get("id") != msg_id   # 🔥 delete by ID
     ]
+    save_data() 
 
     return jsonify({"status": "deleted"})
 
@@ -560,6 +611,7 @@ function loadLicenses() {
     </body>
     </html>
     """
+load_data()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
