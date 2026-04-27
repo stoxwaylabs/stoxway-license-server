@@ -70,14 +70,31 @@ def add_manual_trade():
     if not trade:
         return jsonify({"error": "No trade"}), 400
 
+    # 🔥 JSON (keep for now)
     LIVE_DATA["MANUAL_TRADES"].insert(0, {
         "time": datetime.now(ist).isoformat(),
         "trade": trade
     })
     save_data()
 
-    # Keep only last 50 trades
     LIVE_DATA["MANUAL_TRADES"] = LIVE_DATA["MANUAL_TRADES"][:50]
+
+    # 🔥 ADD THIS (DB SAVE)
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO trades (trade, created_at) VALUES (%s, %s)",
+            (trade, datetime.now(ist))
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ DB SAVE ERROR:", e)
 
     return jsonify({"status": "added"})
     
@@ -92,48 +109,67 @@ def delete_manual_trade():
     if not trade:
         return jsonify({"error": "No trade"}), 400
 
+    # 🔥 JSON DELETE (keep for now)
     trades = LIVE_DATA.get("MANUAL_TRADES", [])
 
     LIVE_DATA["MANUAL_TRADES"] = [
         t for t in trades if t.get("trade") != trade
     ]
-    
-    save_data()  
+
+    save_data()
+
+    # 🔥 ADD THIS (DB DELETE)
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM trades WHERE trade = %s", (trade,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ DB DELETE ERROR:", e)
 
     return jsonify({"status": "deleted"})
-
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
     try:
         symbol = request.args.get("symbol", "NIFTY")
         candles = LIVE_DATA["CANDLES"].get(symbol, [])
 
-        filtered = []
-        now = datetime.now(ist)
+        # 🔥 FETCH FROM DB
+        trades = []
 
-        for t in LIVE_DATA.get("MANUAL_TRADES", []):
-            try:
-                # 🔥 safety checks
-                if not isinstance(t, dict):
-                    continue
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
 
-                if "time" not in t:
-                    continue
+            # 🔥 DAILY DELETE
+            cur.execute("DELETE FROM trades WHERE DATE(created_at) < CURRENT_DATE")
 
-                dt = datetime.fromisoformat(t["time"])
+            # 🔥 FETCH
+            cur.execute("SELECT trade, created_at FROM trades ORDER BY created_at DESC")
 
-                if now - dt <= timedelta(hours=24):
-                    filtered.append(t)
+            rows = cur.fetchall()
 
-            except Exception as e:
-                print("❌ TRADE ERROR:", e)
+            for r in rows:
+                trades.append({
+                    "trade": r[0],
+                    "time": r[1].isoformat()
+                })
 
-        LIVE_DATA["MANUAL_TRADES"] = filtered
-        save_data()
+            conn.commit()
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            print("❌ DB FETCH ERROR:", e)
 
         return jsonify({
             "BOT": LIVE_DATA["BOT"],
-            "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
+            "MANUAL_TRADES": trades,   # 🔥 NOW FROM DB
             "CANDLES": candles
         })
 
@@ -237,68 +273,91 @@ def community_post():
     avatar = data.get("avatar", "📊")
     msg_id = data.get("id") or str(uuid.uuid4())
 
-    if msg:
-        COMMUNITY_DATA.append({
-            "id": msg_id,     # 🔥 STORE ID
-            "user": user,
-            "avatar": avatar,
-            "message": msg,
-            "time": datetime.now(ist).isoformat()
-        })
-        save_data()
+    if not msg:
+        return jsonify({"error": "No message"}), 400
+
+    # 🔥 SAVE TO DB
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO community (id, user_name, message, created_at) VALUES (%s, %s, %s, %s)",
+            (msg_id, user, msg, datetime.now(ist))
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ DB COMMUNITY SAVE ERROR:", e)
 
     return jsonify({"status": "saved"})
 
 @app.route("/get_community", methods=["GET"])
 def get_community():
-    global COMMUNITY_DATA
+    data = []
 
     try:
-        now = datetime.now(ist)
-        filtered = []
+        conn = get_connection()
+        cur = conn.cursor()
 
-        for m in COMMUNITY_DATA:
-            try:
-                if not isinstance(m, dict):
-                    continue
+        # 🔥 DELETE OLD (daily)
+        cur.execute("DELETE FROM community WHERE DATE(created_at) < CURRENT_DATE")
 
-                if "time" not in m:
-                    filtered.append(m)
-                    continue
+        # 🔥 FETCH
+        cur.execute("SELECT id, user_name, message, created_at FROM community ORDER BY created_at DESC")
 
-                dt = datetime.fromisoformat(m["time"])
+        rows = cur.fetchall()
 
-                if now - dt <= timedelta(hours=24):
-                    filtered.append(m)
+        for r in rows:
+            data.append({
+                "id": r[0],
+                "user": r[1],
+                "message": r[2],
+                "time": r[3].isoformat()
+            })
 
-            except Exception as e:
-                print("❌ COMMUNITY ERROR:", e)
-
-        COMMUNITY_DATA = filtered
-        save_data()
-
-        return jsonify(COMMUNITY_DATA[::-1])
+        conn.commit()
+        cur.close()
+        conn.close()
 
     except Exception as e:
-        print("❌ COMMUNITY CRASH:", e)
-        return jsonify([])
+        print("❌ COMMUNITY DB ERROR:", e)
+
+    return jsonify(data)
 
 @app.route("/delete_community", methods=["POST"])
 def delete_community():
     global COMMUNITY_DATA
 
     data = request.json
-    msg_id = data.get("id")   # 🔥 use ID
+    msg_id = data.get("id")
 
     if not msg_id:
         return jsonify({"status": "error", "msg": "No ID provided"})
-   
 
+    # 🔥 JSON DELETE
     COMMUNITY_DATA = [
         m for m in COMMUNITY_DATA
-        if m.get("id") != msg_id   # 🔥 delete by ID
+        if m.get("id") != msg_id
     ]
-    save_data() 
+    save_data()
+
+    # 🔥 ADD THIS (DB DELETE)
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM community WHERE id = %s", (msg_id,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ DB COMMUNITY DELETE ERROR:", e)
 
     return jsonify({"status": "deleted"})
 
@@ -306,8 +365,11 @@ def delete_community():
 # DATABASE CONNECTION
 # ===============================
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
-
+    try:
+        return psycopg2.connect(DATABASE_URL)
+    except Exception as e:
+        print("❌ DB CONNECT ERROR:", e)
+        return None
 
 def init_token_table():
     conn = get_connection()
