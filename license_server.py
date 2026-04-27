@@ -15,6 +15,7 @@ ADMIN_KEY = os.getenv("ADMIN_KEY")
 
 app = Flask(__name__)
 CORS(app)
+
 # ===============================
 # LIVE DASHBOARD STORAGE
 # ===============================
