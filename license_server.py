@@ -104,35 +104,46 @@ def delete_manual_trade():
 
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
+    try:
+        symbol = request.args.get("symbol", "NIFTY")
+        candles = LIVE_DATA["CANDLES"].get(symbol, [])
 
-    symbol = request.args.get("symbol", "NIFTY")
-    candles = LIVE_DATA["CANDLES"].get(symbol, [])
+        filtered = []
+        now = datetime.now(ist)
 
-    # 🔥 AUTO DELETE 24 HOURS
-    from datetime import datetime, timedelta
+        for t in LIVE_DATA.get("MANUAL_TRADES", []):
+            try:
+                # 🔥 safety checks
+                if not isinstance(t, dict):
+                    continue
 
-    filtered = []
+                if "time" not in t:
+                    continue
 
-    for t in LIVE_DATA["MANUAL_TRADES"]:
-        try:
-            dt = datetime.fromisoformat(t["time"])
-            now = datetime.now(ist)
+                dt = datetime.fromisoformat(t["time"])
 
-            if now - dt <= timedelta(hours=24):
-                filtered.append(t)
+                if now - dt <= timedelta(hours=24):
+                    filtered.append(t)
 
-        except Exception as e:
-            print("Time parse error:", e)
+            except Exception as e:
+                print("❌ TRADE ERROR:", e)
 
-    LIVE_DATA["MANUAL_TRADES"] = filtered
-    save_data()  
+        LIVE_DATA["MANUAL_TRADES"] = filtered
+        save_data()
 
-    return jsonify({
-        "BOT": LIVE_DATA["BOT"],
-        "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
-        "CANDLES": candles
-    })
+        return jsonify({
+            "BOT": LIVE_DATA["BOT"],
+            "MANUAL_TRADES": LIVE_DATA["MANUAL_TRADES"],
+            "CANDLES": candles
+        })
 
+    except Exception as e:
+        print("❌ DASHBOARD CRASH:", e)
+        return jsonify({
+            "BOT": LIVE_DATA["BOT"],
+            "MANUAL_TRADES": [],
+            "CANDLES": []
+        })
 @app.route("/get_token", methods=["GET"])
 def get_token():
     conn = get_connection()
@@ -208,11 +219,14 @@ def load_data():
 
 
 def save_data():
-    with open(DATA_FILE, "w") as f:
-        json.dump({
-            "community": COMMUNITY_DATA,
-            "trades": LIVE_DATA["MANUAL_TRADES"]
-        }, f)
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump({
+                "community": COMMUNITY_DATA,
+                "trades": LIVE_DATA["MANUAL_TRADES"]
+            }, f)
+    except Exception as e:
+        print("❌ SAVE ERROR:", e)
 
 @app.route("/community_post", methods=["POST"])
 def community_post():
@@ -239,19 +253,35 @@ def community_post():
 def get_community():
     global COMMUNITY_DATA
 
-    now = datetime.now(ist)
+    try:
+        now = datetime.now(ist)
+        filtered = []
 
-    COMMUNITY_DATA = [
-        m for m in COMMUNITY_DATA
-        if (
-            "time" not in m or
-            (now - datetime.fromisoformat(m["time"])) <= timedelta(hours=24)
-        )
-    ]
+        for m in COMMUNITY_DATA:
+            try:
+                if not isinstance(m, dict):
+                    continue
 
-    save_data()
+                if "time" not in m:
+                    filtered.append(m)
+                    continue
 
-    return jsonify(COMMUNITY_DATA[::-1])
+                dt = datetime.fromisoformat(m["time"])
+
+                if now - dt <= timedelta(hours=24):
+                    filtered.append(m)
+
+            except Exception as e:
+                print("❌ COMMUNITY ERROR:", e)
+
+        COMMUNITY_DATA = filtered
+        save_data()
+
+        return jsonify(COMMUNITY_DATA[::-1])
+
+    except Exception as e:
+        print("❌ COMMUNITY CRASH:", e)
+        return jsonify([])
 
 @app.route("/delete_community", methods=["POST"])
 def delete_community():
