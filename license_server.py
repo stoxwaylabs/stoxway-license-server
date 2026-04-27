@@ -332,6 +332,7 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
+    # 🔥 EXISTING TABLE
     cur.execute("""
         CREATE TABLE IF NOT EXISTS licenses (
             license_key TEXT PRIMARY KEY,
@@ -341,10 +342,13 @@ def init_db():
         );
     """)
 
+    # 🔥 ADD THESE 2 LINES (IMPORTANT)
+    cur.execute("CREATE TABLE IF NOT EXISTS trades (trade TEXT, created_at TIMESTAMP);")
+    cur.execute("CREATE TABLE IF NOT EXISTS community (id TEXT, user_name TEXT, message TEXT, created_at TIMESTAMP);")
+
     conn.commit()
     cur.close()
     conn.close()
-
 
 def add_machine_column_if_missing():
     conn = get_connection()
