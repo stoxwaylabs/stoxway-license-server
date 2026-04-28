@@ -150,7 +150,7 @@ def get_dashboard():
             # 🔥 DAILY DELETE
             cur.execute("""
                 DELETE FROM trades
-                WHERE created_at::date < (NOW() AT TIME ZONE 'Asia/Kolkata')::date             
+                WHERE created_at < NOW() - INTERVAL '1 day'             
             """)
             
             # 🔥 FETCH
@@ -311,7 +311,7 @@ def get_community():
         # 🔥 DELETE OLD (daily)
         cur.execute("""
             DELETE FROM community
-            WHERE created_at::date < (NOW() AT TIME ZONE 'Asia/Kolkata')::date           
+            WHERE created_at < NOW() - INTERVAL '1 day'          
         """)
 
         # 🔥 FETCH
