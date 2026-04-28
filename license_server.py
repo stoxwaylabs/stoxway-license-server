@@ -148,8 +148,10 @@ def get_dashboard():
             cur = conn.cursor()
 
             # 🔥 DAILY DELETE
-            cur.execute("DELETE FROM trades WHERE DATE(created_at) < CURRENT_DATE")
-
+            cur.execute("""
+                DELETE FROM trades
+                WHERE (created_at AT TIME ZONE 'Asia/Kolkata')::date < CURRENT_DATE
+            """)
             # 🔥 FETCH
             cur.execute("SELECT trade, created_at FROM trades ORDER BY created_at DESC")
 
@@ -305,7 +307,10 @@ def get_community():
         cur = conn.cursor()
 
         # 🔥 DELETE OLD (daily)
-        cur.execute("DELETE FROM community WHERE DATE(created_at) < CURRENT_DATE")
+        cur.execute("""
+            DELETE FROM community
+            WHERE (created_at AT TIME ZONE 'Asia/Kolkata')::date < CURRENT_DATE
+        """)
 
         # 🔥 FETCH
         cur.execute("SELECT id, user_name, message, created_at FROM community ORDER BY created_at DESC")
