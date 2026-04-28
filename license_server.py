@@ -157,6 +157,7 @@ def get_dashboard():
             cur.execute("SELECT trade, created_at FROM trades ORDER BY created_at DESC")
 
             rows = cur.fetchall()
+            print("🔥 DEBUG TRADES:", debug_rows)
 
             for r in rows:
                 trades.append({
