@@ -136,6 +136,7 @@ def delete_manual_trade():
     return jsonify({"status": "deleted"})
 @app.route("/get_dashboard", methods=["GET"])
 def get_dashboard():
+    
     try:
         symbol = request.args.get("symbol", "NIFTY")
         candles = LIVE_DATA["CANDLES"].get(symbol, [])
