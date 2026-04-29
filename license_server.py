@@ -289,8 +289,8 @@ def community_post():
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO community (id, user_name, message, created_at) VALUES (%s, %s, %s, %s)",
-            (msg_id, user, msg, datetime.now(ist))
+             "INSERT INTO community (id, user_name, sender, avatar, message, created_at) VALUES (%s, %s, %s, %s, %s, %s)",
+             (msg_id, user, sender, avatar, msg, datetime.now(ist))
         )
 
         conn.commit()
