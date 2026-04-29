@@ -277,6 +277,7 @@ def community_post():
     msg = data.get("message")
     user = data.get("user", "User")
     avatar = data.get("avatar", "📊")
+    sender = data.get("sender", "user")   # 🔥 ADD THIS
     msg_id = data.get("id") or str(uuid.uuid4())
 
     if not msg:
@@ -316,7 +317,7 @@ def get_community():
         """)
 
         # 🔥 FETCH
-        cur.execute("SELECT id, user_name, message, created_at FROM community ORDER BY created_at DESC")
+        cur.execute("SELECT id, user_name, sender, avatar, message, created_at FROM community ORDER BY created_at DESC")
 
         rows = cur.fetchall()
 
@@ -324,8 +325,10 @@ def get_community():
             data.append({
                 "id": r[0],
                 "user": r[1],
-                "message": r[2],
-                "time": r[3].isoformat()
+                "sender": r[2],
+                "avatar": r[3],
+                "message": r[4],
+                "time": r[5].isoformat()
             })
 
         conn.commit()
@@ -415,7 +418,7 @@ def init_db():
 
     # 🔥 ADD THESE 2 LINES (IMPORTANT)
     cur.execute("CREATE TABLE IF NOT EXISTS trades (trade TEXT, created_at TIMESTAMP);")
-    cur.execute("CREATE TABLE IF NOT EXISTS community (id TEXT, user_name TEXT, message TEXT, created_at TIMESTAMP);")
+    cur.execute("CREATE TABLE IF NOT EXISTS community (id TEXT, user_name TEXT, sender TEXT, avatar TEXT, message TEXT, created_at TIMESTAMP);")
 
     conn.commit()
     cur.close()
